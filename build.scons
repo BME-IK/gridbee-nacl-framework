@@ -1,0 +1,118 @@
+#! -*- python -*-
+#
+# Copyright (c) 2011 The Native Client Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+#What to compile:
+sources = [ 'dummy_code/my_main.cc' ]
+
+###############################################################x
+
+import make_nacl_env
+import nacl_utils
+import os
+
+nacl_env = make_nacl_env.NaClEnvironment(
+	use_c_plus_plus_libs=True,
+	nacl_platform=os.getenv('NACL_TARGET_PLATFORM'))
+
+nacl_env.Append(
+    # Add a CPPPATH that enables the full-path #include directives, such as
+    # #include "examples/sine_synth/sine_synth.h"
+    CPPPATH=[os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))],
+    LIBPATH=['lib/lib32','lib/lib64'],
+    #LIBS=['nacl-mounts'],
+    CCFLAGS=['-I./gridbee_boinc_framework/boinc/lib','-I./gridbee_boinc_framework/boinc/', '-O2', '-DUSE_SSE', '-DUSE_SSE2', '-DUSE_SSE3', '-D__SSE__', '-D__SSE2__', '-D__SSE3__', '-msse3']
+   )
+
+wrapped = [
+  'open',
+  'close',
+  'read',
+  'write',
+  'lseek',
+  'tell',
+  'mkdir',
+  'rmdir',
+  'remove',
+  'getcwd',
+  'getwd',
+  'chdir',
+  'isatty',
+  'stat',
+  'fstat',
+  'access',
+  'getuid',
+  'setuid',
+  'getgid',
+  'setgid',
+  'getlogin',
+  'getpwnam',
+  'getpwuid',
+  'umask',
+  'chmod',
+  'ioctl',
+  'link',
+  'unlink',
+  'kill',
+  '__srget_r',
+  'tgetch',
+  'mount',
+  'umount',
+  'signal',
+  'getdents',
+  'fsync',
+  ]
+  
+for symbol in wrapped:  
+  nacl_env.Append(LINKFLAGS=['-Xlinker','--wrap','-Xlinker',symbol])
+
+framework_sources = [
+'worker.cc',
+'bootstrap.cc',
+
+'boinc_api.cpp',
+'jsoncpp.cpp',
+
+'nacl-mounts/base/MainThreadRunner.cc',
+'nacl-mounts/base/MountManager.cc',
+'nacl-mounts/base/KernelProxy.cc',
+'nacl-mounts/base/Entry.cc',
+'nacl-mounts/console/JSPipeMount.cc',
+'nacl-mounts/console/terminal.c',
+'nacl-mounts/console/terminal_stubs.c',
+'nacl-mounts/console/JSPostMessageBridge.cc',
+'nacl-mounts/console/ConsoleMount.cc',
+'nacl-mounts/util/Path.cc',
+'nacl-mounts/util/SimpleAutoLock.cc',
+'nacl-mounts/memory/MemNode.cc',
+'nacl-mounts/memory/MemMount.cc', 
+]
+
+framework_sources  = [ 'gridbee_boinc_framework/' + str for str in framework_sources ]
+
+libboinc_sources = [
+'app_ipc.cpp',
+'base64.cpp', 
+'cert_sig.cpp',
+'coproc.cpp',
+'hostinfo.cpp',
+'md5.c',
+'md5_file.cpp',
+'mem_usage.cpp',
+'mfile.cpp',
+'miofile.cpp',
+'msg_log.cpp',
+'notice.cpp',
+'parse.cpp',
+'prefs.cpp',
+'procinfo_unix.cpp',
+'str_util.cpp',
+'util.cpp',
+'filesys.cpp']
+
+libboinc_sources = [ 'gridbee_boinc_framework/boinc/lib/' + str for str in libboinc_sources ]
+
+
+nacl_env.AllNaClModules(libboinc_sources + framework_sources + sources  , 'client')
